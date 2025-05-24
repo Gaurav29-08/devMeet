@@ -1,0 +1,21 @@
+{
+  "name": "devmeet",
+  "version": "1.0.0",
+  "description": "meetup for developers",
+  "main": "index.js",
+  "scripts": {
+     "start": "nodemon src/app.js"
+  },
+  "keywords": [
+    "nodejs",
+    "javascript"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^5.1.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
