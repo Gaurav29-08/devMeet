@@ -4,7 +4,7 @@
   "description": "meetup for developers",
   "main": "index.js",
   "scripts": {
-     "start": "nodemon src/app.js"
+    "start": "nodemon src/app.js"
   },
   "keywords": [
     "nodejs",
@@ -13,7 +13,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "mongoose": "^8.15.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"
