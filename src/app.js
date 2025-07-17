@@ -2,99 +2,108 @@ const express = require("express");
 const connectDB = require("./config/database");
 const app = express();
 const User = require("./models/user");
-const {validatesSignUpData} = require("./utils/validation");
+const {validateSignUpData} = require("./utils/validation");
+
 const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
-const jwt = require("jsonwebtoken");
-const {userAuth} = require("./middlewares/auth");
 
 
 
 app.use(express.json());
-app.use(cookieParser());
 
-app.post("/signup",async (req,res)=>{
-  try{
-
-    //validation of data 
-    validatesSignUpData(req);
-
+app.post("/signup", async (req, res) => {
+  try {
+    validateSignUpData(req);
     const {firstName,lastName,emailId,password} = req.body;
-    //Encrypt password
 
     const passwordHash = await bcrypt.hash(password,10);
-    
-  const user = new User({firstName,lastName,emailId,password:passwordHash});
-  
+    console.log(passwordHash);
+
+  const user = new User({firstName,lastName,emailId,
+        password:passwordHash});
+
     await user.save();
     res.send("User added successfully");
-  }
-  catch(err) {
-    res.status(400).send("Error saving the user: "+err.message);
+  } catch (err) {
+    res.status(400).send("Error : " + err.message);
   }
 });
 
-app.post("/login",async(req,res)=>{
+app.get("/login",async(req,res)=>{
   try{
     const {emailId,password} = req.body;
-
     const user = await User.findOne({emailId:emailId});
-  if(!user){
-    throw new Error("invalid credentials");
+    if(!user){
+      throw new Error("Email Id is not present");
+    }
+    const isPasswordValid = await bcrypt.compare(password,user.password);
+
+    if(isPasswordValid) {
+      res.send("Log in succesffuly");
+    } else{
+      throw new Error("password is not correct")
+    }
+  } catch(err){
+    res.status(400).send("Eroor" + err.message);
   }
-  const isPasswordValid = await user.validatePassword(password);
-  
-  if(isPasswordValid){
-   
-     const token = await user.getJWT();
-   
-     
-res.cookie("token",token,{
-  expires : new Date(Date.now()+8*3600000),
 });
-    res.send("Login sussessfull");
-  }
-  else {
-    throw new Error("Invalid credentials");
-  }
-  }
-  catch(err){
-    res.status(400).send("error" + err.message);
-  }
 
-})
 
-app.get("/profile",userAuth, async(req,res)=>{
+app.get("/user",async(req,res)=>{
+  const userEmail = req.body.emailId;
+  try{
+    const user= await User.find({emailId:userEmail});
+    if(user.length===0){
+      res.status(404).send("user not found");
+    } else {
+       res.send(user);
+      
+    }
+   
+  } catch(err){
+    res.status(400).send("Something went wrong");
+  }
+});
+
+app.patch("/update/:userId", async (req, res) => {
+  const userId = req.params.userId;
+  const data = req.body;
+
+
+
   try {
 
-  const user = req.user;
-res.send(user);
-  }  catch(err){
-    res.status(400).send("error" + err.message);
+      const ALLOWED_UPDATE = ["about","gender","age","skills"];
+
+  const isAllowedUpdate = Object.keys(data).every((k)=>
+    ALLOWED_UPDATE.includes(k)
+);
+if(!isAllowedUpdate){
+ throw new Error("Update is not allowed");
+}
+
+    const user = await User.findByIdAndUpdate({_id : userId},data,{
+      returnDocument :"after",
+      runValidators : true,
+
+    });
+    res.send("update successfully");
+  } catch (err) {
+    res.status(400).send("Update Failed : " + err.message);
   }
-  
 });
 
 
-app.post("/Request", userAuth, async (req, res) => {
-  const user = req.user;
-  
-  console.log("Sending a connection request");
-  res.send(user.firstName  + " sent the connection request");
-});
 
-
-    
-connectDB().then(()=>{
-  console.log("DataBase connection established...");
+connectDB()
+.then(()=>{
+  console.log("connected succeffuly database");
   app.listen(7777,()=>{
     console.log("Server is successfully listening on port 7777");
-  });
     
-  }).catch((err)=>{
+  });
+})
+  .catch((err)=>{
     console.log("Database can not be connected");
     
-  
-  
-});
 
+  });
